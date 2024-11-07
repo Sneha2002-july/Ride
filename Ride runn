@@ -1,0 +1,18 @@
+public class RequestRide implements Runnable {
+    private RideSharingManager manager;
+    private Ride ride;
+
+    public RequestRide(RideSharingManager manager, Ride ride) {
+        this.manager = manager;
+        this.ride = ride;
+    }
+
+    @Override
+    public void run() {
+        try {
+            manager.requestRide(ride);
+        } catch (NoDriverAvailableException e) {
+            System.out.println(e.getMessage());
+        }
+    }
+}
