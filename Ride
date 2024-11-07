@@ -1,0 +1,52 @@
+import java.util.HashMap;
+import java.util.Map;
+
+public class RideSharingManager {
+    private Map<Integer, Driver> drivers = new HashMap<>();
+    private Map<Integer, Ride> rides = new HashMap<>();
+
+    public synchronized void requestRide(Ride ride) throws NoDriverAvailableException {
+        boolean driverAvailable = false;
+        for (Driver driver : drivers.values()) {
+            if (driver.isAvailable()) {
+                driverAvailable = true;
+                ride.setStatus("Requested");
+                rides.put(ride.getRideId(), ride);
+                break;
+            }
+        }
+        if (!driverAvailable) {
+            throw new NoDriverAvailableException("No available drivers at this time.");
+        }
+    }
+
+    public synchronized void acceptRide(int driverId, int rideId) throws RideNotAvailableException {
+        Ride ride = rides.get(rideId);
+        if (ride == null || !ride.getStatus().equals("Requested")) {
+            throw new RideNotAvailableException("Ride is not available for acceptance.");
+        }
+
+        Driver driver = drivers.get(driverId);
+        if (driver != null && driver.isAvailable()) {
+            driver.setCurrentRide(ride);
+            driver.setAvailable(false);
+            ride.setDriverName(driver.getName());
+            ride.setStatus("In Progress");
+        }
+    }
+
+    public synchronized void cancelRide(int rideId) throws RideNotCancelableException {
+        Ride ride = rides.get(rideId);
+        if (ride == null || ride.getStatus().equals("Completed") || ride.getStatus().equals("Cancelled")) {
+            throw new RideNotCancelableException("Cannot cancel a completed or already canceled ride.");
+        }
+        ride.setStatus("Cancelled");
+        // Update driver's availability if they were handling this ride
+    }
+
+    public synchronized void viewActiveRides() {
+        rides.values().stream()
+                .filter(ride -> ride.getStatus().equals("In Progress"))
+                .forEach(System.out::println);
+    }
+}
